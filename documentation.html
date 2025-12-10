@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>توثيق لعبة Robot Path Planning</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            line-height: 1.8;
+            color: #333;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 3rem;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            border-bottom: 3px solid #0a0e27;
+            padding-bottom: 2rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #0a0e27;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #666;
+            font-style: italic;
+        }
+
+        h2 {
+            font-size: 2rem;
+            color: #0a0e27;
+            margin-top: 2.5rem;
+            margin-bottom: 1.5rem;
+            border-right: 5px solid #00d4ff;
+            padding-right: 1rem;
+            font-weight: bold;
+        }
+
+        h3 {
+            font-size: 1.5rem;
+            color: #16213e;
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+            font-weight: bold;
+        }
+
+        h4 {
+            font-size: 1.2rem;
+            color: #333;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+
+        p {
+            margin-bottom: 1rem;
+            text-align: justify;
+            font-size: 1.05rem;
+        }
+
+        ul, ol {
+            margin-left: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+            font-size: 1.05rem;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            color: #d63384;
+        }
+
+        pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            border-left: 4px solid #00d4ff;
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            color: #d4d4d4;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: white;
+        }
+
+        table th {
+            background: #0a0e27;
+            color: white;
+            padding: 1rem;
+            text-align: right;
+            font-weight: bold;
+            border: 1px solid #ddd;
+        }
+
+        table td {
+            padding: 1rem;
+            border: 1px solid #ddd;
+            text-align: right;
+        }
+
+        table tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+
+        table tr:hover {
+            background: #f0f0f0;
+        }
+
+        .formula {
+            background: #e8f4f8;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            border-right: 4px solid #00d4ff;
+            font-family: 'Times New Roman', Times, serif;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        .highlight {
+            background: #fff3cd;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            border-right: 4px solid #ffc107;
+        }
+
+        .highlight strong {
+            color: #856404;
+        }
+
+        .feature-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .feature-item {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-right: 4px solid #00d4ff;
+        }
+
+        .feature-item strong {
+            color: #0a0e27;
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .toc {
+            background: #f0f8ff;
+            padding: 2rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            border-right: 4px solid #00d4ff;
+        }
+
+        .toc h3 {
+            margin-top: 0;
+            color: #0a0e27;
+        }
+
+        .toc ul {
+            list-style: none;
+            margin-left: 0;
+        }
+
+        .toc li {
+            margin-bottom: 0.8rem;
+        }
+
+        .toc a {
+            color: #0a0e27;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .toc a:hover {
+            color: #00d4ff;
+        }
+
+        .step {
+            background: #e8f5e9;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            border-right: 4px solid #4caf50;
+        }
+
+        .step strong {
+            color: #1b5e20;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        footer {
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 2px solid #ddd;
+            text-align: center;
+            color: #666;
+            font-size: 0.95rem;
+        }
+
+        .page-break {
+            page-break-after: always;
+            margin: 2rem 0;
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .container {
+                box-shadow: none;
+                max-width: 100%;
+                padding: 0;
+            }
+
+            h2 {
+                page-break-before: always;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🤖 لعبة Robot Path Planning</h1>
+            <p class="subtitle">توثيق شامل لخوارزمية A* وتطبيقها</p>
+        </header>
+
+        <div class="toc">
+            <h3>جدول المحتويات</h3>
+            <ul>
+                <li><a href="#introduction">مقدمة عن اللعبة</a></li>
+                <li><a href="#algorithm">شرح خوارزمية A*</a></li>
+                <li><a href="#implementation">طريقة التكويد والتطبيق</a></li>
+                <li><a href="#benefits">الفوائد المضافة</a></li>
+                <li><a href="#technical">المعلومات التقنية</a></li>
+                <li><a href="#usage">كيفية الاستخدام</a></li>
+            </ul>
+        </div>
+
+        <section id="introduction">
+            <h2>مقدمة عن اللعبة</h2>
+            
+            <p><strong>Robot Path Planning Game</strong> هي لعبة تعليمية تفاعلية تهدف إلى تصور وفهم خوارزمية البحث <strong>A* (A Star)</strong> بشكل عملي وسهل. تجمع اللعبة بين التعليم والترفيه، مما يجعلها أداة فعالة لفهم مفاهيم الخوارزميات المعقدة.</p>
+
+            <h3>المميزات الرئيسية:</h3>
+            <div class="feature-list">
+                <div class="feature-item">
+                    <strong>🎮 شبكة تفاعلية</strong>
+                    شبكة (Grid) بحجم 18×18 خلية مع رسوميات احترافية
+                </div>
+                <div class="feature-item">
+                    <strong>🤖 روبوت ذكي</strong>
+                    يبدأ من نقطة البداية ويتحرك نحو الهدف
+                </div>
+                <div class="feature-item">
+                    <strong>🎯 أهداف عشوائية</strong>
+                    تتغير الأهداف عشوائياً بعد الوصول إليها
+                </div>
+                <div class="feature-item">
+                    <strong>🧱 عوائق قابلة للتعديل</strong>
+                    إنشاء متاهات مخصصة بسهولة
+                </div>
+                <div class="feature-item">
+                    <strong>⚡ حل آلي</strong>
+                    تشغيل خوارزمية A* وعرض المسار الأمثل
+                </div>
+                <div class="feature-item">
+                    <strong>💡 نظام تلميحات</strong>
+                    الحصول على الخطوة التالية الموصى بها
+                </div>
+            </div>
+        </section>
+
+        <section id="algorithm">
+            <h2>شرح خوارزمية A*</h2>
+
+            <h3>ما هي خوارزمية A*؟</h3>
+            <p>خوارزمية <strong>A*</strong> هي خوارزمية بحث عن المسار الأمثل (Optimal Path Finding Algorithm) تجمع بين مزايا خوارزميتين مشهورتين:</p>
+            <ul>
+                <li><strong>خوارزمية Dijkstra</strong>: البحث عن أقصر مسار</li>
+                <li><strong>خوارزمية Greedy Best-First Search</strong>: الاستخدام الفعال للمعلومات الإضافية</li>
+            </ul>
+
+            <h3>الصيغة الرياضية الأساسية:</h3>
+            <div class="formula">
+                <strong>f(n) = g(n) + h(n)</strong>
+            </div>
+
+            <h4>شرح المتغيرات:</h4>
+            <ul>
+                <li><strong>f(n)</strong>: التكلفة الإجمالية المتوقعة للعقدة n (النقطة)</li>
+                <li><strong>g(n)</strong>: التكلفة الفعلية من نقطة البداية إلى العقدة n</li>
+                <li><strong>h(n)</strong>: التكلفة المتوقعة (Heuristic) من العقدة n إلى الهدف</li>
+            </ul>
+
+            <h3>خصائص الخوارزمية:</h3>
+            <table>
+                <tr>
+                    <th>الخاصية</th>
+                    <th>الوصف</th>
+                </tr>
+                <tr>
+                    <td><strong>شمولية (Complete)</strong></td>
+                    <td>تجد حلاً إذا كان موجوداً في المساحة المعطاة</td>
+                </tr>
+                <tr>
+                    <td><strong>الأمثلية (Optimal)</strong></td>
+                    <td>تجد أقصر مسار ممكن بين البداية والهدف</td>
+                </tr>
+                <tr>
+                    <td><strong>الكفاءة</strong></td>
+                    <td>أسرع من خوارزمية Dijkstra في معظم الحالات</td>
+                </tr>
+                <tr>
+                    <td><strong>التعقيد الزمني</strong></td>
+                    <td>O(b^d) حيث b عامل التفرع و d عمق الحل</td>
+                </tr>
+            </table>
+
+            <h3>الدوال الإرشادية (Heuristics):</h3>
+
+            <h4>1. مسافة مانهاتن (Manhattan Distance)</h4>
+            <div class="formula">
+                h(n) = |x<sub>goal</sub> - x<sub>n</sub>| + |y<sub>goal</sub> - y<sub>n</sub>|
+            </div>
+            <p><strong>الاستخدام:</strong> تُستخدم للحركة الأفقية والعمودية فقط (4 اتجاهات). أكثر دقة عندما تكون الحركة محدودة بـ 4 اتجاهات فقط.</p>
+
+            <h4>2. المسافة الإقليدية (Euclidean Distance)</h4>
+            <div class="formula">
+                h(n) = √[(x<sub>goal</sub> - x<sub>n</sub>)² + (y<sub>goal</sub> - y<sub>n</sub>)²]
+            </div>
+            <p><strong>الاستخدام:</strong> تُستخدم للحركة في 8 اتجاهات (بما فيها الأقطار). أكثر دقة عندما تكون الحركة حرة في جميع الاتجاهات.</p>
+        </section>
+
+        <section id="implementation">
+            <h2>طريقة التكويد والتطبيق</h2>
+
+            <h3>1. تعريف فئة Node</h3>
+            <p>أولاً، نقوم بإنشاء فئة تمثل كل نقطة في الشبكة:</p>
+            <pre><code>class Node {
+  x: number;           // الموضع X
+  y: number;           // الموضع Y
+  g: number;           // التكلفة من البداية
+  h: number;           // التكلفة المتوقعة للهدف
+  f: number;           // f(n) = g(n) + h(n)
+  parent: Node | null; // العقدة الأب (للتتبع)
+
+  constructor(x: number, y: number, g: number, h: number) {
+    this.x = x;
+    this.y = y;
+    this.g = g;
+    this.h = h;
+    this.f = g + h;
+    this.parent = null;
+  }
+}</code></pre>
+
+            <h3>2. دالة الحساب الإرشادي</h3>
+            <p>دالة تحسب المسافة المتوقعة من نقطة إلى أخرى:</p>
+            <pre><code>function heuristic(
+  from: Cell,
+  to: Cell,
+  type: "manhattan" | "euclidean" = "manhattan"
+): number {
+  const dx = Math.abs(from.x - to.x);
+  const dy = Math.abs(from.y - to.y);
+  
+  if (type === "manhattan") {
+    return dx + dy;
+  } else {
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+}</code></pre>
+
+            <h3>3. خوارزمية A* الكاملة</h3>
+            <p>الخوارزمية الرئيسية التي تبحث عن المسار الأمثل:</p>
+            <pre><code>function aStar(
+  start: Cell,
+  goal: Cell,
+  walls: Set&lt;string&gt;,
+  gridSize: number
+): Cell[] {
+  // 1. تهيئة المجموعات
+  const openSet: Node[] = [];      // العقد المراد فحصها
+  const closedSet = new Set&lt;string&gt;(); // العقد المفحوصة
+  const nodeMap = new Map&lt;string, Node&gt;(); // خريطة العقد
+
+  // 2. إضافة عقدة البداية
+  const startNode = new Node(start.x, start.y, 0, heuristic(start, goal));
+  openSet.push(startNode);
+  nodeMap.set(`${start.x},${start.y}`, startNode);
+
+  // 3. حلقة البحث الرئيسية
+  while (openSet.length &gt; 0) {
+    // أ. البحث عن العقدة بأقل f(n)
+    let current = openSet[0];
+    let currentIndex = 0;
+    for (let i = 1; i &lt; openSet.length; i++) {
+      if (openSet[i].f &lt; current.f) {
+        current = openSet[i];
+        currentIndex = i;
+      }
+    }
+
+    // ب. التحقق من الوصول للهدف
+    if (current.x === goal.x && current.y === goal.y) {
+      // إعادة بناء المسار
+      const path: Cell[] = [];
+      let node: Node | null = current;
+      while (node) {
+        path.unshift({ x: node.x, y: node.y });
+        node = node.parent;
+      }
+      return path;
+    }
+
+    // ج. نقل العقدة من openSet إلى closedSet
+    openSet.splice(currentIndex, 1);
+    closedSet.add(`${current.x},${current.y}`);
+
+    // د. فحص الجيران (8 اتجاهات)
+    const neighbors = [
+      { x: 0, y: -1 }, { x: 1, y: 0 }, { x: 0, y: 1 }, { x: -1, y: 0 },
+      { x: 1, y: -1 }, { x: 1, y: 1 }, { x: -1, y: 1 }, { x: -1, y: -1 }
+    ];
+
+    for (const neighbor of neighbors) {
+      const newX = current.x + neighbor.x;
+      const newY = current.y + neighbor.y;
+
+      // التحقق من الحدود والجدران
+      if (newX &lt; 0 || newX &gt;= gridSize || newY &lt; 0 || newY &gt;= gridSize) continue;
+      if (walls.has(`${newX},${newY}`)) continue;
+      if (closedSet.has(`${newX},${newY}`)) continue;
+
+      // حساب التكلفة الجديدة
+      const newG = current.g + (Math.abs(neighbor.x) + Math.abs(neighbor.y) === 2 ? 1.414 : 1);
+      const newH = heuristic({ x: newX, y: newY }, goal);
+      const newF = newG + newH;
+
+      // التحقق من وجود مسار أفضل
+      const existingNode = nodeMap.get(`${newX},${newY}`);
+      if (existingNode && existingNode.g &lt;= newG) continue;
+
+      // إنشاء عقدة جديدة
+      const newNode = new Node(newX, newY, newG, newH);
+      newNode.parent = current;
+      openSet.push(newNode);
+      nodeMap.set(`${newX},${newY}`, newNode);
+    }
+  }
+
+  return []; // لم يتم العثور على مسار
+}</code></pre>
+
+            <h3>4. خطوات الخوارزمية بالتفصيل:</h3>
+
+            <div class="step">
+                <strong>الخطوة 1: التهيئة (Initialization)</strong>
+                <p>إنشاء مجموعة openSet تحتوي على عقدة البداية، وإنشاء مجموعة closedSet فارغة. تعيين g(start) = 0 و h(start) = المسافة للهدف.</p>
+            </div>
+
+            <div class="step">
+                <strong>الخطوة 2: حلقة البحث الرئيسية (Main Loop)</strong>
+                <p>اختيار العقدة بأقل f(n) من openSet. إذا كانت الهدف، إعادة بناء المسار والخروج من الحلقة.</p>
+            </div>
+
+            <div class="step">
+                <strong>الخطوة 3: فحص الجيران (Neighbor Expansion)</strong>
+                <p>لكل جار لم يتم فحصه: حساب g الجديدة، حساب h باستخدام الدالة الإرشادية، إضافة الجار إلى openSet إذا كان أفضل من المسار السابق.</p>
+            </div>
+
+            <div class="step">
+                <strong>الخطوة 4: التكرار (Iteration)</strong>
+                <p>تكرار الخطوات 2-3 حتى إيجاد الهدف أو انتهاء openSet (لا يوجد مسار).</p>
+            </div>
+        </section>
+
+        <section id="benefits">
+            <h2>الفوائد المضافة</h2>
+
+            <h3>1. التعليم التفاعلي</h3>
+            <div class="highlight">
+                <strong>فهم عملي:</strong> رؤية الخوارزمية تعمل بشكل مباشر وفوري
+                <br><strong>تصور بصري:</strong> رسم المسار خطوة بخطوة مع حركات سلسة
+                <br><strong>تجربة فورية:</strong> تغيير الجدران والأهداف والتحكم اليدوي بسهولة
+            </div>
+
+            <h3>2. الحركة المتدرجة (Animated Path)</h3>
+            <p>بدلاً من عرض المسار بالكامل فوراً، يتم عرضه خطوة بخطوة:</p>
+            <pre><code>// عرض المسار خطوة بخطوة بدلاً من الحل الفوري
+let step = 0;
+const animationInterval = setInterval(() => {
+  step++;
+  setGameState((prev) => ({
+    ...prev,
+    animatedPath: path.slice(0, step + 1)
+  }));
+}, 150); // 150ms لكل خطوة</code></pre>
+            <p><strong>الفائدة:</strong> فهم أعمق لكيفية تحرك الروبوت، رؤية المسار الذي تتبعته الخوارزمية، تعليم أكثر فعالية.</p>
+
+            <h3>3. الأهداف العشوائية (Dynamic Goals)</h3>
+            <p>توليد أهداف عشوائية جديدة بعد الوصول إلى كل هدف:</p>
+            <pre><code>function generateRandomGoal(walls: Set&lt;string&gt;, gridSize: number, robot: Cell): Cell {
+  let goal: Cell;
+  do {
+    goal = {
+      x: Math.floor(Math.random() * gridSize),
+      y: Math.floor(Math.random() * gridSize)
+    };
+  } while (walls.has(`${goal.x},${goal.y}`) || (goal.x === robot.x && goal.y === robot.y));
+  return goal;
+}</code></pre>
+            <p><strong>الفائدة:</strong> تحديات متنوعة، إعادة لعب غير محدودة، اختبار الخوارزمية في حالات مختلفة.</p>
+
+            <h3>4. نظام التلميحات (Hint System)</h3>
+            <p>توفير تلميح بالخطوة التالية الموصى بها:</p>
+            <pre><code>const handleHint = () => {
+  const path = aStar(gameState.robot, gameState.goal, gameState.walls, GRID_SIZE);
+  if (path.length &gt; 1) {
+    setGameState((prev) => ({
+      ...prev,
+      nextHint: path[1] // الخطوة التالية فقط
+    }));
+  }
+};</code></pre>
+            <p><strong>الفائدة:</strong> مساعدة المستخدم دون حل المشكلة بالكامل، تعليم تدريجي، تحفيز على التفكير.</p>
+
+            <h3>5. تحرير الجدران (Edit Walls)</h3>
+            <p>إمكانية إنشاء متاهات مخصصة بسهولة من خلال النقر على الشبكة.</p>
+            <p><strong>الفائدة:</strong> اختبار الخوارزمية في حالات معقدة، فهم تأثير العوائق على المسار، إنشاء تحديات مخصصة.</p>
+
+            <h3>6. دعم Heuristics المتعددة</h3>
+            <p>اختيار بين نوعين من الدوال الإرشادية:</p>
+            <ul>
+                <li><strong>Manhattan Distance:</strong> للحركة المحدودة بـ 4 اتجاهات</li>
+                <li><strong>Euclidean Distance:</strong> للحركة الحرة في 8 اتجاهات</li>
+            </ul>
+            <p><strong>الفائدة:</strong> مقارنة الأداء والنتائج، فهم تأثير الدالة الإرشادية على الخوارزمية.</p>
+        </section>
+
+        <section id="technical">
+            <h2>المعلومات التقنية</h2>
+
+            <h3>معايير الأداء:</h3>
+            <table>
+                <tr>
+                    <th>المعيار</th>
+                    <th>القيمة</th>
+                </tr>
+                <tr>
+                    <td>حجم الشبكة</td>
+                    <td>18×18 خلية (324 خلية إجمالاً)</td>
+                </tr>
+                <tr>
+                    <td>عدد الاتجاهات</td>
+                    <td>8 (أفقي، عمودي، قطري)</td>
+                </tr>
+                <tr>
+                    <td>وقت الحركة</td>
+                    <td>150ms لكل خطوة</td>
+                </tr>
+                <tr>
+                    <td>الحد الأقصى للخطوات</td>
+                    <td>324 (18×18)</td>
+                </tr>
+                <tr>
+                    <td>حجم Canvas</td>
+                    <td>504×504 بكسل</td>
+                </tr>
+            </table>
+
+            <h3>التعقيد الحسابي:</h3>
+            <div class="formula">
+                <strong>Time Complexity: O(b<sup>d</sup>)</strong><br>
+                <strong>Space Complexity: O(b<sup>d</sup>)</strong><br><br>
+                حيث:<br>
+                b = عامل التفرع (8 في هذه اللعبة)<br>
+                d = عمق الحل (عدد الخطوات)
+            </div>
+
+            <h3>مثال عملي:</h3>
+            <p><strong>السيناريو:</strong> روبوت في (2,2) والهدف في (12,12)</p>
+            <ol>
+                <li><strong>البداية:</strong> openSet = [Node(2,2, g=0, h=20)], closedSet = []</li>
+                <li><strong>التكرار الأول:</strong> اختيار Node(2,2)، فحص 8 جيران، إضافة الجيران إلى openSet</li>
+                <li><strong>التكرارات التالية:</strong> اختيار العقدة بأقل f(n)، الاستمرار حتى الوصول للهدف</li>
+                <li><strong>النتيجة:</strong> مسار بـ 14-21 خطوة (حسب الجدران)، أقصر مسار ممكن</li>
+            </ol>
+        </section>
+
+        <section id="usage">
+            <h2>كيفية الاستخدام</h2>
+
+            <h3>التحكم اليدوي:</h3>
+            <ul>
+                <li><strong>أسهم لوحة المفاتيح (↑ ↓ ← →):</strong> تحريك الروبوت في الاتجاهات المختلفة</li>
+                <li><strong>WASD:</strong> تحريك بديل (W=أعلى، A=يسار، S=أسفل، D=يمين)</li>
+            </ul>
+
+            <h3>الأزرار الرئيسية:</h3>
+            <ul>
+                <li><strong>SOLVE:</strong> تشغيل خوارزمية A* وعرض المسار بشكل متدرج</li>
+                <li><strong>HINT:</strong> عرض الخطوة التالية الموصى بها فقط</li>
+                <li><strong>RESET:</strong> إعادة اللعبة للوضع الابتدائي</li>
+            </ul>
+
+            <h3>الإعدادات:</h3>
+            <ul>
+                <li><strong>Edit Walls:</strong> تفعيل وضع تحرير الجدران (انقر على الشبكة لإضافة/إزالة جدران)</li>
+                <li><strong>Heuristic:</strong> اختيار نوع الدالة الإرشادية (Manhattan أو Euclidean)</li>
+            </ul>
+
+            <h3>نصائح للعب:</h3>
+            <ol>
+                <li>ابدأ بالتحكم اليدوي لفهم الشبكة والعوائق</li>
+                <li>استخدم HINT للحصول على اقتراح بالخطوة التالية</li>
+                <li>اضغط SOLVE لرؤية الحل الكامل بشكل متدرج</li>
+                <li>جرّب إنشاء متاهات مختلفة باستخدام Edit Walls</li>
+                <li>قارن بين Manhattan و Euclidean heuristics</li>
+            </ol>
+        </section>
+
+        <footer>
+            <p><strong>تاريخ الإنشاء:</strong> ديسمبر 2025</p>
+            <p><strong>الإصدار:</strong> 1.0</p>
+            <p><strong>المطور:</strong> Karam Ghanem</p>
+            <p><strong>الترخيص:</strong> MIT License</p>
+        </footer>
+    </div>
+</body>
+</html>
