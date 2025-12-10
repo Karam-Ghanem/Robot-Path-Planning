@@ -64,6 +64,18 @@ function heuristic(from: Cell, to: Cell, type: "manhattan" | "euclidean" = "manh
   }
 }
 
+// Generate random goal position that is not a wall
+function generateRandomGoal(walls: Set<string>, gridSize: number, robot: Cell): Cell {
+  let goal: Cell;
+  do {
+    goal = {
+      x: Math.floor(Math.random() * gridSize),
+      y: Math.floor(Math.random() * gridSize)
+    };
+  } while (walls.has(`${goal.x},${goal.y}`) || (goal.x === robot.x && goal.y === robot.y));
+  return goal;
+}
+
 function aStar(
   start: Cell,
   goal: Cell,
@@ -381,11 +393,30 @@ export default function Home() {
         // Check bounds and walls
         if (newX >= 0 && newX < GRID_SIZE && newY >= 0 && newY < GRID_SIZE && !gameState.walls.has(`${newX},${newY}`)) {
           const newRobot = { x: newX, y: newY };
-          setGameState((prev) => ({
-            ...prev,
-            robot: newRobot,
-            isSolved: newX === prev.goal.x && newY === prev.goal.y
-          }));
+          
+          // Check if robot reached the goal
+          const reachedGoal = newX === gameState.goal.x && newY === gameState.goal.y;
+          
+          setGameState((prev) => {
+            if (reachedGoal) {
+              // Generate new random goal
+              const newGoal = generateRandomGoal(prev.walls, GRID_SIZE, newRobot);
+              return {
+                ...prev,
+                robot: newRobot,
+                goal: newGoal,
+                path: [],
+                nextHint: null,
+                isSolved: false
+              };
+            } else {
+              return {
+                ...prev,
+                robot: newRobot,
+                isSolved: false
+              };
+            }
+          });
         }
       }
     };
@@ -396,12 +427,28 @@ export default function Home() {
 
   const handleSolve = () => {
     const path = aStar(gameState.robot, gameState.goal, gameState.walls, GRID_SIZE);
-    setGameState((prev) => ({
-      ...prev,
-      path,
-      nextHint: null,
-      isSolved: path.length > 0 && path[path.length - 1].x === prev.goal.x && path[path.length - 1].y === prev.goal.y
-    }));
+    
+    // If path exists and reaches the goal, move robot to goal and generate new goal
+    if (path.length > 0 && path[path.length - 1].x === gameState.goal.x && path[path.length - 1].y === gameState.goal.y) {
+      const finalPos = path[path.length - 1];
+      const newGoal = generateRandomGoal(gameState.walls, GRID_SIZE, finalPos);
+      
+      setGameState((prev) => ({
+        ...prev,
+        robot: finalPos,
+        goal: newGoal,
+        path: [],
+        nextHint: null,
+        isSolved: false
+      }));
+    } else {
+      setGameState((prev) => ({
+        ...prev,
+        path,
+        nextHint: null,
+        isSolved: false
+      }));
+    }
   };
 
   const handleHint = () => {
@@ -410,19 +457,24 @@ export default function Home() {
       setGameState((prev) => ({
         ...prev,
         path: [],
-        nextHint: path[1]
+        nextHint: path[1],
+        isSolved: false
       }));
     }
   };
 
   const handleReset = () => {
-    setGameState((prev) => ({
-      ...prev,
-      robot: prev.start,
-      path: [],
-      nextHint: null,
-      isSolved: false
-    }));
+    setGameState((prev) => {
+      const newGoal = generateRandomGoal(prev.walls, GRID_SIZE, prev.start);
+      return {
+        ...prev,
+        robot: prev.start,
+        goal: newGoal,
+        path: [],
+        nextHint: null,
+        isSolved: false
+      };
+    });
   };
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
