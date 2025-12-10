@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { RotateCcw, Lightbulb, Zap } from "lucide-react";
 import "../styles/game.css";
@@ -27,12 +27,14 @@ interface GameState {
   nextHint: Cell | null;
   isPlaying: boolean;
   isSolved: boolean;
+  animatedPath: Cell[];  // For animated path visualization
+  isAnimating: boolean;  // Is animation in progress
 }
 
-const GRID_SIZE = 20;
-const CELL_SIZE = 30;
-const CANVAS_WIDTH = GRID_SIZE * CELL_SIZE;
-const CANVAS_HEIGHT = GRID_SIZE * CELL_SIZE;
+const GRID_SIZE = 15;  // Reduced from 20 for better fit
+const CELL_SIZE = 24;  // Reduced from 30
+const CANVAS_WIDTH = GRID_SIZE * CELL_SIZE;  // 360px
+const CANVAS_HEIGHT = GRID_SIZE * CELL_SIZE;  // 360px
 
 // A* Algorithm Implementation
 class Node {
@@ -115,45 +117,31 @@ function aStar(
     openSet.splice(currentIndex, 1);
     closedSet.add(`${current.x},${current.y}`);
 
-    // Check all 8 neighbors (including diagonals)
+    // 8-directional movement (including diagonals)
     const neighbors = [
-      { x: 0, y: -1 }, // up
-      { x: 1, y: 0 },  // right
-      { x: 0, y: 1 },  // down
-      { x: -1, y: 0 }, // left
-      { x: 1, y: -1 }, // up-right
-      { x: 1, y: 1 },  // down-right
-      { x: -1, y: 1 }, // down-left
-      { x: -1, y: -1 } // up-left
+      { x: 0, y: -1 }, { x: 1, y: 0 }, { x: 0, y: 1 }, { x: -1, y: 0 },
+      { x: 1, y: -1 }, { x: 1, y: 1 }, { x: -1, y: 1 }, { x: -1, y: -1 }
     ];
 
     for (const neighbor of neighbors) {
       const newX = current.x + neighbor.x;
       const newY = current.y + neighbor.y;
-      const key = `${newX},${newY}`;
 
-      // Check bounds
       if (newX < 0 || newX >= gridSize || newY < 0 || newY >= gridSize) continue;
-      
-      // Check if wall or already visited
-      if (walls.has(key) || closedSet.has(key)) continue;
+      if (walls.has(`${newX},${newY}`)) continue;
+      if (closedSet.has(`${newX},${newY}`)) continue;
 
-      // Calculate cost (diagonal movement costs more)
-      const moveCost = Math.abs(neighbor.x) + Math.abs(neighbor.y) === 2 ? 1.4 : 1;
-      const newG = current.g + moveCost;
+      const newG = current.g + (Math.abs(neighbor.x) + Math.abs(neighbor.y) === 2 ? 1.414 : 1);
+      const newH = heuristic({ x: newX, y: newY }, goal);
+      const newF = newG + newH;
 
-      const existingNode = nodeMap.get(key);
-      if (existingNode && newG >= existingNode.g) continue;
+      const existingNode = nodeMap.get(`${newX},${newY}`);
+      if (existingNode && existingNode.g <= newG) continue;
 
-      const h = heuristic({ x: newX, y: newY }, goal);
-      const newNode = new Node(newX, newY, newG, h);
+      const newNode = new Node(newX, newY, newG, newH);
       newNode.parent = current;
-
-      nodeMap.set(key, newNode);
-
-      if (!existingNode) {
-        openSet.push(newNode);
-      }
+      openSet.push(newNode);
+      nodeMap.set(`${newX},${newY}`, newNode);
     }
   }
 
@@ -162,26 +150,30 @@ function aStar(
 
 export default function Home() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
   const [gameState, setGameState] = useState<GameState>(() => {
     const walls = new Set<string>();
     // Add some default walls
-    for (let i = 5; i < 15; i++) {
-      walls.add(`${i},${10}`);
+    for (let i = 5; i < 10; i++) {
+      walls.add(`${i},${7}`);
     }
-    walls.add(`${10},${8}`);
-    walls.add(`${10},${9}`);
-    walls.add(`${10},${11}`);
-    walls.add(`${10},${12}`);
+    walls.add(`${7},${5}`);
+    walls.add(`${7},${6}`);
+    walls.add(`${7},${8}`);
+    walls.add(`${7},${9}`);
 
     return {
       robot: { x: 2, y: 2 },
-      goal: { x: 17, y: 17 },
+      goal: { x: 12, y: 12 },  // Adjusted for smaller grid
       start: { x: 2, y: 2 },
       walls,
       path: [],
       nextHint: null,
       isPlaying: true,
-      isSolved: false
+      isSolved: false,
+      animatedPath: [],
+      isAnimating: false
     };
   });
 
@@ -192,7 +184,7 @@ export default function Home() {
   // Update stats and trigger animation
   useEffect(() => {
     setStats({
-      pathLength: gameState.path.length,
+      pathLength: gameState.path.length + gameState.animatedPath.length,
       wallCount: gameState.walls.size
     });
     
@@ -204,7 +196,7 @@ export default function Home() {
     animationId = requestAnimationFrame(animate);
     
     return () => cancelAnimationFrame(animationId);
-  }, [gameState.path, gameState.walls]);
+  }, [gameState.path, gameState.walls, gameState.animatedPath]);
 
   // Draw game on canvas with enhanced graphics
   useEffect(() => {
@@ -255,55 +247,73 @@ export default function Home() {
       ctx.strokeRect(x * CELL_SIZE + 2, y * CELL_SIZE + 2, CELL_SIZE - 4, CELL_SIZE - 4);
     });
 
-    // Draw path with glow effect
+    // Draw animated path with glow effect
+    if (gameState.animatedPath.length > 0) {
+      // Path glow
+      ctx.strokeStyle = "rgba(0, 212, 255, 0.2)";
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      for (let i = 0; i < gameState.animatedPath.length; i++) {
+        const cell = gameState.animatedPath[i];
+        const x = cell.x * CELL_SIZE + CELL_SIZE / 2;
+        const y = cell.y * CELL_SIZE + CELL_SIZE / 2;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      // Path line
+      ctx.strokeStyle = "#00d4ff";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let i = 0; i < gameState.animatedPath.length; i++) {
+        const cell = gameState.animatedPath[i];
+        const x = cell.x * CELL_SIZE + CELL_SIZE / 2;
+        const y = cell.y * CELL_SIZE + CELL_SIZE / 2;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+
+    // Draw static path with glow effect
     if (gameState.path.length > 0) {
       // Path glow
       ctx.strokeStyle = "rgba(0, 212, 255, 0.2)";
-      ctx.lineWidth = 6;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      ctx.globalAlpha = 0.5;
+      ctx.lineWidth = 4;
       ctx.beginPath();
-      ctx.moveTo(gameState.path[0].x * CELL_SIZE + CELL_SIZE / 2, gameState.path[0].y * CELL_SIZE + CELL_SIZE / 2);
-      for (let i = 1; i < gameState.path.length; i++) {
-        ctx.lineTo(gameState.path[i].x * CELL_SIZE + CELL_SIZE / 2, gameState.path[i].y * CELL_SIZE + CELL_SIZE / 2);
+      for (let i = 0; i < gameState.path.length; i++) {
+        const cell = gameState.path[i];
+        const x = cell.x * CELL_SIZE + CELL_SIZE / 2;
+        const y = cell.y * CELL_SIZE + CELL_SIZE / 2;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
       }
       ctx.stroke();
-      ctx.globalAlpha = 1;
-      
+
       // Path line
       ctx.strokeStyle = "#00d4ff";
-      ctx.lineWidth = 2.5;
-      ctx.globalAlpha = 0.8;
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(gameState.path[0].x * CELL_SIZE + CELL_SIZE / 2, gameState.path[0].y * CELL_SIZE + CELL_SIZE / 2);
-      for (let i = 1; i < gameState.path.length; i++) {
-        ctx.lineTo(gameState.path[i].x * CELL_SIZE + CELL_SIZE / 2, gameState.path[i].y * CELL_SIZE + CELL_SIZE / 2);
+      for (let i = 0; i < gameState.path.length; i++) {
+        const cell = gameState.path[i];
+        const x = cell.x * CELL_SIZE + CELL_SIZE / 2;
+        const y = cell.y * CELL_SIZE + CELL_SIZE / 2;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
       }
       ctx.stroke();
-      ctx.globalAlpha = 1;
     }
 
-    // Draw hint with pulsing effect
+    // Draw hint point
     if (gameState.nextHint) {
-      const pulse = Math.sin(Date.now() / 300) * 0.2 + 0.3;
-      ctx.fillStyle = `rgba(255, 0, 255, ${pulse})`;
-      ctx.fillRect(
-        gameState.nextHint.x * CELL_SIZE,
-        gameState.nextHint.y * CELL_SIZE,
-        CELL_SIZE,
-        CELL_SIZE
-      );
-      
-      // Hint border
-      ctx.strokeStyle = "#ff00ff";
-      ctx.lineWidth = 2;
-      ctx.strokeRect(
-        gameState.nextHint.x * CELL_SIZE,
-        gameState.nextHint.y * CELL_SIZE,
-        CELL_SIZE,
-        CELL_SIZE
-      );
+      ctx.fillStyle = "#ff00ff";
+      ctx.shadowColor = "#ff00ff";
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      ctx.arc(gameState.nextHint.x * CELL_SIZE + CELL_SIZE / 2, gameState.nextHint.y * CELL_SIZE + CELL_SIZE / 2, CELL_SIZE / 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
     }
 
     // Draw start point with glow
@@ -370,7 +380,7 @@ export default function Home() {
   // Handle keyboard input
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      if (!gameState.isPlaying) return;
+      if (!gameState.isPlaying || gameState.isAnimating) return;
 
       const key = e.key.toLowerCase();
       const directions: { [key: string]: { x: number; y: number } } = {
@@ -407,7 +417,9 @@ export default function Home() {
                 goal: newGoal,
                 path: [],
                 nextHint: null,
-                isSolved: false
+                isSolved: false,
+                animatedPath: [],
+                isAnimating: false
               };
             } else {
               return {
@@ -423,32 +435,70 @@ export default function Home() {
 
     window.addEventListener("keydown", handleKeyPress);
     return () => window.removeEventListener("keydown", handleKeyPress);
-  }, [gameState.isPlaying, gameState.robot, gameState.walls, gameState.goal]);
+  }, [gameState.isPlaying, gameState.robot, gameState.walls, gameState.goal, gameState.isAnimating]);
 
   const handleSolve = () => {
+    if (gameState.isAnimating) return; // Prevent multiple animations
+    
     const path = aStar(gameState.robot, gameState.goal, gameState.walls, GRID_SIZE);
     
-    // If path exists and reaches the goal, move robot to goal and generate new goal
-    if (path.length > 0 && path[path.length - 1].x === gameState.goal.x && path[path.length - 1].y === gameState.goal.y) {
-      const finalPos = path[path.length - 1];
-      const newGoal = generateRandomGoal(gameState.walls, GRID_SIZE, finalPos);
-      
-      setGameState((prev) => ({
-        ...prev,
-        robot: finalPos,
-        goal: newGoal,
-        path: [],
-        nextHint: null,
-        isSolved: false
-      }));
-    } else {
-      setGameState((prev) => ({
-        ...prev,
-        path,
-        nextHint: null,
-        isSolved: false
-      }));
+    if (path.length === 0) return; // No path found
+    
+    // Start animation
+    setGameState((prev) => ({
+      ...prev,
+      animatedPath: [],
+      isAnimating: true,
+      path: [] // Clear the static path
+    }));
+    
+    // Animate the path step by step
+    let step = 0;
+    
+    if (animationIntervalRef.current) {
+      clearInterval(animationIntervalRef.current);
     }
+    
+    animationIntervalRef.current = setInterval(() => {
+      step++;
+      
+      if (step >= path.length) {
+        // Animation complete
+        if (animationIntervalRef.current) {
+          clearInterval(animationIntervalRef.current);
+          animationIntervalRef.current = null;
+        }
+        
+        // Check if reached goal and generate new one
+        const finalPos = path[path.length - 1];
+        if (finalPos.x === gameState.goal.x && finalPos.y === gameState.goal.y) {
+          const newGoal = generateRandomGoal(gameState.walls, GRID_SIZE, finalPos);
+          setGameState((prev) => ({
+            ...prev,
+            robot: finalPos,
+            goal: newGoal,
+            animatedPath: [],
+            isAnimating: false,
+            path: [],
+            nextHint: null,
+            isSolved: false
+          }));
+        } else {
+          setGameState((prev) => ({
+            ...prev,
+            animatedPath: [],
+            isAnimating: false,
+            path: path // Show full path if didn't reach goal
+          }));
+        }
+      } else {
+        // Update animated path
+        setGameState((prev) => ({
+          ...prev,
+          animatedPath: path.slice(0, step + 1)
+        }));
+      }
+    }, 150); // 150ms per step
   };
 
   const handleHint = () => {
@@ -458,12 +508,19 @@ export default function Home() {
         ...prev,
         path: [],
         nextHint: path[1],
-        isSolved: false
+        isSolved: false,
+        animatedPath: [],
+        isAnimating: false
       }));
     }
   };
 
   const handleReset = () => {
+    if (animationIntervalRef.current) {
+      clearInterval(animationIntervalRef.current);
+      animationIntervalRef.current = null;
+    }
+    
     setGameState((prev) => {
       const newGoal = generateRandomGoal(prev.walls, GRID_SIZE, prev.start);
       return {
@@ -472,7 +529,9 @@ export default function Home() {
         goal: newGoal,
         path: [],
         nextHint: null,
-        isSolved: false
+        isSolved: false,
+        animatedPath: [],
+        isAnimating: false
       };
     });
   };
@@ -554,65 +613,51 @@ export default function Home() {
                 <code>{stats.wallCount}</code>
               </div>
               {gameState.isSolved && (
-                <div className="info-item success">
-                  ✓ Goal Reached!
-                </div>
+                <div className="success-message">✓ Goal Reached!</div>
               )}
             </div>
 
             <div className="controls-section">
               <h2>Controls</h2>
-              <div className="control-group">
-                <p className="control-hint">Use arrow keys or WASD to move</p>
-                <div className="arrow-keys">
-                  <div className="key">↑</div>
-                  <div className="key">←</div>
-                  <div className="key">↓</div>
-                  <div className="key">→</div>
-                </div>
-              </div>
-
+              <p>Use arrow keys or WASD to move</p>
               <div className="button-group">
                 <Button
                   onClick={handleSolve}
-                  className="btn-solve"
+                  disabled={gameState.isAnimating}
+                  className="solve-btn"
                   title="Run A* algorithm to find optimal path"
                 >
-                  <Zap className="w-4 h-4" />
-                  Solve
+                  <Zap size={18} /> SOLVE
                 </Button>
                 <Button
                   onClick={handleHint}
-                  className="btn-hint"
+                  disabled={gameState.isAnimating}
+                  className="hint-btn"
                   title="Get next step hint"
                 >
-                  <Lightbulb className="w-4 h-4" />
-                  Hint
+                  <Lightbulb size={18} /> HINT
                 </Button>
                 <Button
                   onClick={handleReset}
-                  className="btn-reset"
+                  className="reset-btn"
                   title="Reset game"
                 >
-                  <RotateCcw className="w-4 h-4" />
-                  Reset
+                  <RotateCcw size={18} /> RESET
                 </Button>
               </div>
             </div>
 
             <div className="settings-section">
               <h2>Settings</h2>
-              <div className="setting-item">
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={editMode}
-                    onChange={(e) => setEditMode(e.target.checked)}
-                  />
-                  Edit Walls
-                </label>
-              </div>
-              <div className="setting-item">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={editMode}
+                  onChange={(e) => setEditMode(e.target.checked)}
+                />
+                Edit Walls
+              </label>
+              <div className="select-group">
                 <label>Heuristic:</label>
                 <select
                   value={heuristicType}
