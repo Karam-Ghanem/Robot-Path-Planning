@@ -31,10 +31,10 @@ interface GameState {
   isAnimating: boolean;  // Is animation in progress
 }
 
-const GRID_SIZE = 15;  // Reduced from 20 for better fit
-const CELL_SIZE = 24;  // Reduced from 30
-const CANVAS_WIDTH = GRID_SIZE * CELL_SIZE;  // 360px
-const CANVAS_HEIGHT = GRID_SIZE * CELL_SIZE;  // 360px
+const GRID_SIZE = 18;  // Medium size: between 15 and 20
+const CELL_SIZE = 28;  // Medium cell size: between 24 and 30
+const CANVAS_WIDTH = GRID_SIZE * CELL_SIZE;  // 504px
+const CANVAS_HEIGHT = GRID_SIZE * CELL_SIZE;  // 504px
 
 // A* Algorithm Implementation
 class Node {
